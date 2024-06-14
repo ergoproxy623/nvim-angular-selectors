@@ -1,7 +1,7 @@
 local Source = {}
 local config = require("cmp.config")
 local a = require("plenary.async")
-local l = require("html-css.local")
+local l = require("angular-selectors.local")
 local ts = vim.treesitter
 local tsu = require("nvim-treesitter.ts_utils")
 local parsers = require("nvim-treesitter.parsers")
@@ -31,7 +31,7 @@ function Source:setup()
 end
 
 function Source:new()
-	self.source_name = "html-css"
+	self.source_name = "angular-selectors"
 	self.isRemote = "^https?://"
 	self.remote_classes = {}
 	self.items = {}
