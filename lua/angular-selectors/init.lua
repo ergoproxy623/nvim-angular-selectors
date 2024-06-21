@@ -14,7 +14,6 @@ local rootDir = scan.scan_dir(".", {
 	respect_gitignore = true,
 	search_pattern = function(entry)
 		local subEntry = entry:sub(3) -- remove ./
-		-- %f[%a]git%f[^%a] -- old regex for matching .git
 		return subEntry:match(".git$") or subEntry:match("package.json") -- if project contains .git folder or package.json its gonna work
 	end,
 })
@@ -33,10 +32,8 @@ end
 function Source:new()
 	self.source_name = "angular-selectors"
 	self.isRemote = "^https?://"
-	self.remote_classes = {}
 	self.items = {}
 	self.ids = {}
-	self.href_links = {}
 
 	-- reading user config
 	self.user_config = config.get_source_config(self.source_name) or {}
@@ -53,14 +50,11 @@ function Source:new()
 
 	-- if git_folder_exists == 1 then
 	if vim.tbl_count(rootDir) ~= 0 then
-		self.style_sheets = mrgtbls(self.style_sheets, self.href_links) -- merge lings together
+		self.style_sheets = mrgtbls(self.style_sheets, {}) -- merge lings together
 
 		-- read all local files on start
 		a.run(function()
 			l.read_local_files(self.file_extensions, function(classes, ids)
-				for _, class in ipairs(classes) do
-					table.insert(self.items, class)
-				end
 				for _, id in ipairs(ids) do
 					table.insert(self.ids, id)
 				end
@@ -80,24 +74,14 @@ function Source:complete(_, callback)
 		-- read all local files on start
 		a.run(function()
 			l.read_local_files(self.file_extensions, function(classes, ids)
-				for _, class in ipairs(classes) do
-					table.insert(self.items, class)
-				end
 				for _, id in ipairs(ids) do
 					table.insert(self.ids, id)
 				end
 			end)
-			for _, class in ipairs(self.remote_classes) do
-				table.insert(self.items, class)
-			end
 		end)
 
-		if self.current_selector == "class" or self.current_selector == "className" then
-			callback({ items = self.items, isComplete = false })
-		else
-			if self.current_selector == "id" then
+        if self.current_selector == "element" then
 				callback({ items = self.ids, isComplete = false })
-			end
 		end
 	end
 end
@@ -109,52 +93,15 @@ function Source:is_available()
 
 	local bufnr = vim.api.nvim_get_current_buf()
 	local parser = parsers.get_parser(bufnr)
-	local node_at_cursor = tsu.get_node_at_cursor()
+    if parser then
+      local lang = parser:lang()
 
-	if node_at_cursor == nil then
-		return
-	end
-
-	local current_node = node_at_cursor
-	local lang = parser:lang()
-
-
-	while current_node do
-		if lang == "html" or lang == "svelte" or lang == "vue" or lang == "angular" then
-			if current_node:type() == "attribute_name" then
-				local identifier_name = ts.get_node_text(current_node, 0)
-				if
-					identifier_name == "className"
-					or identifier_name == "class"
-					or identifier_name == "id"
-					or identifier_name == "[id]"
-				then
-					self.current_selector = identifier_name
-					return true
-				end
-				break
-			end
-			current_node = current_node:prev_named_sibling()
-		else
-			if current_node:type() == "jsx_attribute" then
-				if current_node:child(0):type() == "property_identifier" then
-					local identifier_name = ts.get_node_text(current_node:child(0), 0)
-					if
-						identifier_name == "className"
-						or identifier_name == "class"
-						or identifier_name == "id"
-					then
-						self.current_selector = identifier_name
-						return true
-					end
-					break
-				end
-			end
-			current_node = current_node:parent()
-		end
-	end
-
-	return false
+      if lang == "html" or lang == "svelte" or lang == "vue" or lang == "angular" then
+        self.current_selector = "element"
+		return true	
+	  end
+    end 
+	
 end
 
 return Source:new()

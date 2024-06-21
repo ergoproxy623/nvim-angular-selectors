@@ -1,20 +1,15 @@
 local M = {}
 local cmp = require("cmp")
-local u = require("html-css.utils.init")
+local u = require("angular-selectors.utils.init")
 local a = require("plenary.async")
 local j = require("plenary.job")
 local ts = vim.treesitter
-local classes = {}
-local ids = {}
-local unique_class = {}
-local unique_ids = {}
+local selectors = {}
+local unique_selectors = {}
 
--- treesitter query for extracting css clasess
 local qs = [[
-	(id_selector
-		(id_name)@id_name)
-	(class_selector
-		(class_name)@class_name)
+	(export_statement
+		(decorator)@decorator)
 ]]
 
 ---@async
@@ -44,32 +39,31 @@ M.read_local_files = a.wrap(function(file_extensions, cb)
 			---@type string
 			local file_name = u.get_file_name(file, "[^/]+$")
 			if file_name then
-				if string.find(file_name, ".scss")  or string.find(file_name, '.css') then
+				
+				if  file_name:match("^.+(%..+)$") == '.ts' then
 					local fd = io.open(file, "r")
 					local data = fd:read("*a")
 					fd:close()
 
-					-- reading html files
-					-- local _, fd = a.uv.fs_open(file, "r", 438)
-					-- local _, stat = a.uv.fs_fstat(fd)
-					-- local _, data = a.uv.fs_read(fd, stat.size, 0)
-					-- a.uv.fs_close(fd)
-
-					classes = {} -- clean up prev classes
-					ids = {}
+					selectors = {}
 					unique_class = {}
-					unique_ids = {}
+					unique_selectors = {}
 
-					local parser = ts.get_string_parser(data, "css")
+					local parser = ts.get_string_parser(data, "typescript")
 					local tree = parser:parse()[1]
 					local root = tree:root()
-					local query = ts.query.parse("css", qs)
+					local query = ts.query.parse("typescript", qs)
 
 					for _, matches, _ in query:iter_matches(root, data, 0, 0, {}) do
 						for _, node in pairs(matches) do
-							if node:type() == "id_name" then
-								local id_name = ts.get_node_text(node, data)
-								table.insert(unique_ids, id_name)
+							if node:type() == "decorator" then
+								local id_name = ts.get_node_text(node, data):gsub("%s+", "")
+								id_name =  string.match(id_name, 'selector:(.+),templateUrl')
+								if id_name then
+								  id_name = id_name:gsub('"','')
+								  id_name = id_name:gsub("'",'')
+									table.insert(unique_selectors, id_name)
+								end
 							else
 								local class_name = ts.get_node_text(node, data)
 								table.insert(unique_class, class_name)
@@ -77,25 +71,17 @@ M.read_local_files = a.wrap(function(file_extensions, cb)
 						end
 					end
 
-					local unique_list = u.unique_list(unique_class)
-					for _, class in ipairs(unique_list) do
-						table.insert(classes, {
-							label = class,
-							kind = cmp.lsp.CompletionItemKind.Enum,
-							menu = file_name,
-						})
-					end
 
-					local unique_ids_list = u.unique_list(unique_ids)
-					for _, id in ipairs(unique_ids_list) do
-						table.insert(ids, {
+					local unique_selectors_list = u.unique_list(unique_selectors)
+					for _, id in ipairs(unique_selectors_list) do
+						table.insert(selectors, {
 							label = id,
-							kind = cmp.lsp.CompletionItemKind.Enum,
+							kind = cmp.lsp.CompletionItemKind.Text,
 							menu = file_name,
 						})
 					end
 
-					cb(classes, ids)
+					cb({}, selectors)
 				end
 			end
 		end
