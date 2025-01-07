@@ -58,7 +58,7 @@ M.read_local_files = a.wrap(function(file_extensions, cb)
 						for _, node in pairs(matches) do
 							if node:type() == "decorator" then
 								local id_name = ts.get_node_text(node, data):gsub("%s+", "")
-								id_name =  string.match(id_name, 'selector:(.+),templateUrl')
+								id_name =  string.match(id_name, 'selector:(.+),')
 								if id_name then
 								  id_name = id_name:gsub('"','')
 								  id_name = id_name:gsub("'",'')
