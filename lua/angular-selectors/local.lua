@@ -76,7 +76,7 @@ M.read_local_files = a.wrap(function(file_extensions, cb)
 					for _, id in ipairs(unique_selectors_list) do
 						table.insert(selectors, {
 							label = id,
-							kind = cmp.lsp.CompletionItemKind.Text,
+							kind = "Selector",
 							menu = file_name,
 						})
 					end
