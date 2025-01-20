@@ -42,31 +42,10 @@ function Source:new()
 	self.style_sheets = self.option.style_sheets or {}
 	self.enable_on = self.option.enable_on or {}
 
-	-- Get the current working directory
-	local current_directory = vim.fn.getcwd()
-
-	-- Check if the current directory contains a .git folder
-	local git_folder_exists = vim.fn.isdirectory(current_directory .. "/.git")
-
-	-- if git_folder_exists == 1 then
-	if vim.tbl_count(rootDir) ~= 0 then
-		self.style_sheets = mrgtbls(self.style_sheets, {}) -- merge lings together
-
-		-- read all local files on start
-		a.run(function()
-			l.read_local_files(self.file_extensions, function(classes, ids)
-				for _, id in ipairs(ids) do
-					table.insert(self.ids, id)
-				end
-			end)
-		end)
-	end
-
 	return self
 end
 
 function Source:complete(_, callback)
-	print("complete")
 	if vim.tbl_count(rootDir) ~= 0 then
 		self.items = {}
 		self.ids = {}
@@ -80,8 +59,8 @@ function Source:complete(_, callback)
 			end)
 		end)
 
-        if self.current_selector == "element" then
-				callback({ items = self.ids, isComplete = false })
+		if self.current_selector == "element" then
+			callback({ items = self.ids, isComplete = false })
 		end
 	end
 end
@@ -93,15 +72,15 @@ function Source:is_available()
 
 	local bufnr = vim.api.nvim_get_current_buf()
 	local parser = parsers.get_parser(bufnr)
-    if parser then
-      local lang = parser:lang()
+	if parser then
+		local lang = parser:lang()
 
-      if lang == "html" or lang == "svelte" or lang == "vue" or lang == "angular" then
-        self.current_selector = "element"
-		return true	
-	  end
-    end 
-	
+		if lang == "html" or lang == "svelte" or lang == "vue" or lang == "angular" then
+			self.current_selector = "element"
+			return true
+		end
+	end
+	return false
 end
 
 return Source:new()

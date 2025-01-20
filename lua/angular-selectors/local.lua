@@ -15,7 +15,7 @@ local qs = [[
 ---@async
 M.read_local_files = a.wrap(function(file_extensions, cb)
 	local files = {}
-	local fa = { "-a" }
+	local fa = { "^*.component.ts$" }
 
 	-- WARNING need to check for performance in larger projects
 	for _, extension in ipairs(file_extensions) do
@@ -76,7 +76,7 @@ M.read_local_files = a.wrap(function(file_extensions, cb)
 					for _, id in ipairs(unique_selectors_list) do
 						table.insert(selectors, {
 							label = id,
-							kind = cmp.lsp.CompletionItemKind.AngularSelector,
+							kind = cmp.lsp.CompletionItemKind.Enum,
 							menu = file_name,
 						})
 					end
