@@ -46,7 +46,6 @@ M.read_local_files = a.wrap(function(file_extensions, cb)
 					fd:close()
 
 					selectors = {}
-					unique_class = {}
 					unique_selectors = {}
 
 					local parser = ts.get_string_parser(data, "typescript")
@@ -64,9 +63,6 @@ M.read_local_files = a.wrap(function(file_extensions, cb)
 								  id_name = id_name:gsub("'",'')
 									table.insert(unique_selectors, id_name)
 								end
-							else
-								local class_name = ts.get_node_text(node, data)
-								table.insert(unique_class, class_name)
 							end
 						end
 					end
@@ -76,7 +72,7 @@ M.read_local_files = a.wrap(function(file_extensions, cb)
 					for _, id in ipairs(unique_selectors_list) do
 						table.insert(selectors, {
 							label = id,
-							kind = cmp.lsp.CompletionItemKind.Enum,
+							kind = cmp.lsp.CompletionItemKind.Snippet,
 							menu = file_name,
 						})
 					end
